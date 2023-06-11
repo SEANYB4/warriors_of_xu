@@ -163,6 +163,7 @@ window.addEventListener('load', () => {
                 this.platforms.push(new Platform(this, this.platformPositions[i][0], this.platformPositions[i][1]));
             }
             
+            this.dead = false;
 
 
 
@@ -170,7 +171,9 @@ window.addEventListener('load', () => {
             // EVENT LISTENERS
             canvas.addEventListener('mousedown', (e) => {
 
-                console.log('mouse down');
+                if (this.dead) {
+                    this.restart();
+                }
                 
                 
             });
@@ -215,8 +218,15 @@ window.addEventListener('load', () => {
 
 
     
+        restart() {
 
-        
+            this.player.x = 50;
+            this.player.y = 50;
+            this.dead = false;
+
+
+        }
+            
 
 
         render(context) {
@@ -240,9 +250,25 @@ window.addEventListener('load', () => {
             this.player.draw(context);
             this.player.update();
 
+            // check for player death
 
+            if (this.player.y > this.height) {
+                this.dead = true;
+                context.fillStyle = 'white';
+                context.font = "30px Orbitron";
+                context.textAlign = 'center';
+                context.fillText('You died', this.width/2, this.height/2-20);
 
-            
+            }
+
+            if (this.dead) {
+                context.fillStyle = 'blue';
+                context.fillRect(this.width/2-100, this.height/2, 200, 50);
+                context.fillStyle = 'white';
+                context.fillText('Restart', this.width/2, this.height/2+35);
+
+            }
+
         }
 
 
@@ -287,6 +313,8 @@ window.addEventListener('load', () => {
         
         wetdream.style.top = `${verticalPos}px`;
 
+
+        
 
 
 
