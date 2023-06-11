@@ -3,6 +3,32 @@ window.addEventListener('load', () => {
     const canvas = document.getElementById("game-canvas");
     const ctx = canvas.getContext("2d");
     const FPS = 60;
+    // for moving monk picture position
+    let up = true;
+    let verticalPos = 200;
+    let wetdream = document.getElementById('wetdream');
+
+
+    // animation global variables
+    let animationCount = 0;
+
+    // AUDIO
+    let music = document.getElementById('music');
+    
+
+
+
+    // Wet Dream Dialogue
+
+    const dialogueText = document.getElementById('dialogue');
+
+    dialogueText.innerHTML = 'This is edited by JS....';
+
+
+
+
+
+
 
     class Platform {
 
@@ -47,10 +73,15 @@ window.addEventListener('load', () => {
         constructor(game) {
             this.game = game;
 
+
+            this.images = {
+                idle: './Idle.png',
+                jump: './Jump.png'
+
+            }
+
             this.image = new Image();
             this.image.src = './Idle.png';
-            
-
             
 
             this.x = 50;
@@ -68,10 +99,15 @@ window.addEventListener('load', () => {
 
 
             context.drawImage(this.image, this.spriteX, this.spriteY, this.width, this.height, this.x, this.y, this.width, this.height);
-            this.spriteX = this.spriteX+95.8
+            
+
+            if (animationCount == 0) {
+                this.spriteX = this.spriteX+95.8
             if (this.spriteX >= 610) {
                 this.spriteX = 0;
             }
+            }
+            
         }
 
         update() {
@@ -212,14 +248,49 @@ window.addEventListener('load', () => {
 
     }
 
+     // create an instance of the game
+     const game = new Game(canvas);
     let lastTime = 0;
+    
+
+    music.play();
     function gameLoop(timestamp) {
 
         // Calculate the time between frames
         const deltaTime = timestamp - lastTime;
         lastTime = timestamp;
+
+
+
+        // update animation count
+        animationCount += 1;
+        if (animationCount > 5) {
+            animationCount = 0;
+        }
+
     
-        // update the game state
+        // UPDATE THE GAME STATE
+
+
+        // make wet dream float
+        if(up) {
+            verticalPos -= .2;
+            if (verticalPos < 190) {
+                up = false;
+            }
+        } else {
+            verticalPos += .2;
+            if (verticalPos > 210) {
+                up = true;
+            }
+        }
+        
+        wetdream.style.top = `${verticalPos}px`;
+
+
+
+
+
 
 
         // draw the game on the canvas
@@ -236,8 +307,7 @@ window.addEventListener('load', () => {
         }, delayTime);
     }
     
-    // create an instance of the game
-    const game = new Game(canvas);
+   
     gameLoop(performance.now());
 
 });
