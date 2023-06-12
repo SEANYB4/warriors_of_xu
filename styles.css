@@ -61,6 +61,12 @@ h1 {
 
 }
 
+
+#instructionscontainer p {
+
+    max-width: 80%;
+}
+
 #dialogue-box {
     position: absolute;
     bottom: 200px;
