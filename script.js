@@ -33,8 +33,10 @@ window.addEventListener('load', () => {
 
             // Enemy stats
 
+            this.health = 100;
             this.attackStrength = 10;
             this.attacking = false;
+            this.jumping = false;
 
 
 
@@ -45,6 +47,7 @@ window.addEventListener('load', () => {
                 run: './EnemyRun.png',
                 run2: './EnemyRun2.png',
                 attack: './EnemyAttack.png',
+                attack2: './EnemyAttack2.png'
 
             }
 
@@ -89,18 +92,23 @@ window.addEventListener('load', () => {
 
             // ENEMY AI
             if (this.attacking) {
-                this.image.src = this.images.attack;
-            }
-
-            else if (this.x >= this.game.player.x + 40) {
+                if (this.x > this.game.player.x){
+                    this.image.src = this.images.attack2;
+                } else {
+                    this.image.src = this.images.attack;
+                }
+       
+            } else if ((this.x >= this.game.player.x + 40) && (Math.random()*50>45)) {
                 this.xVelocity = -5;
                 this.image.src = this.images.run2;
-            } else if (this.x <= this.game.player.x - 40) {
+                
+
+            } else if (this.x <= this.game.player.x - 40 && (Math.random()*50>45)) {
                 this.xVelocity = 5;
                 this.image.src = this.images.run;
-            } else if (((this.x <= (this.game.player.x + 40)) || (this.x >= (this.game.player.x - 40)) && 
-                        (this.y <= (this.game.player.y + 5)) || (this.y >= (this.game.player.y - 5))
-                )) {
+            } else if (((this.x <= (this.game.player.x + 40)) && (this.x >= (this.game.player.x - 40))) && 
+                        ((this.y <= (this.game.player.y + 5)) && (this.y >= (this.game.player.y - 5))) &&
+                        !this.game.dead) {
                 this.xVelocity = 0;
                 
                 if((Math.random()*50)>49){
@@ -108,16 +116,24 @@ window.addEventListener('load', () => {
                     this.attacking = true;
                     this.attack();
                 } else {
-                    this.image.src = this.images.idle;
+                    if (this.x > this.game.player.x){
+                        this.image.src = this.images.idle2;
+                    } else {
+                        this.image.src = this.images.idle;
+                    }
                 }
                 
 
             } else if (this.x <= this.game.player.x + 40 || this.x >= this.game.player.x -40) {
-                this.image.src = this.images.idle;
+                if (this.x > this.game.player.x){
+                    this.image.src = this.images.idle2;
+                } else {
+                    this.image.src = this.images.idle;
+                }
+                
             } else if (this.game.dead) {
                 this.image.src = this.images.idle;
             }
-
 
             
 
@@ -126,30 +142,48 @@ window.addEventListener('load', () => {
                 // vertical collision detection
 
                 if (((this.x+(this.width)-40) >= this.game.platformPositions[i][0] && (this.x <= this.game.platformPositions[i][0]+(this.game.platforms[0].width-20))) &&
-                    (this.y+this.height) <= (this.game.platformPositions[i][1]+1) && (this.y+this.height) >= this.game.platformPositions[i][1]-.1) {
+                    (this.y+this.height) <= (this.game.platformPositions[i][1]+1) && (this.y+this.height) >= this.game.platformPositions[i][1]-1) {
                         this.yVelocity = 0;
+                        this.jumping = false;
                         break
 
-                } else {
+                } else if (!this.jumping){
                     this.yVelocity = 5;
                 }
 
                 
             }
  
-    
+            
             this.y += this.yVelocity;
             this.x += this.xVelocity;
 
             
             this.xVelocity = 0;
             
+
+
+            if (this.y > this.game.height) {
+                this.game.enemies.pop(this);
+                this.game.enemies.push(new Enemy(this.game, Math.random()*this.game.width, Math.random()*this.game.height));
+            }
+            
         }
 
 
         attack() {
 
-            this.game.player.health -= this.attackStrength;
+            if (this.game.player.health > 0) {
+                this.game.player.health -= this.attackStrength;
+            } else {
+                this.game.player.healt = 0;
+            }
+            
+
+            if (this.game.player.health <= 0){
+                this.game.dead = true;
+                this.animationCount = 0;
+            }
 
 
 
@@ -226,6 +260,9 @@ window.addEventListener('load', () => {
                 run: './Run.png',
                 run2: './Run2.png',
                 attack: './Attack_1.png',
+                idle2: './Idle2.png',
+                attack2: './Attack2.png',
+                dead: './Dead.png'
 
             }
 
@@ -242,43 +279,43 @@ window.addEventListener('load', () => {
             this.spriteX = 0;
             this.spriteY = 0;
 
+
+            this.left = false;
+
         }
 
         draw(context) {
 
 
-            // Check which sprites to draw
-
-            // if (this.yVelocity !== 0){
-            //     this.image.src = this.images.jump;
-            // } else if(this.yVelocity == 0){
-            //     this.image.src = this.images.idle;
-            // }
-
             // Player Animation
-
             
-
-                if (animationCount == 0) {
-                    this.spriteX = this.spriteX+95.8
-                if (this.spriteX >= 610) {
+            if (this.game.dead) {
+                if(this.spriteX < 350){
+                    this.spriteX = this.spriteX+95.8;
+                }
+                
+            } else if (animationCount == 0) {
+                this.spriteX = this.spriteX+95.8
+                if (this.spriteX >= 514) {
                     this.spriteX = 0;
+                    if (this.attacking){
+                        this.attacking = false;
+                    }
                 }
-                }
+            }
 
           
 
             context.drawImage(this.image, this.spriteX, this.spriteY, this.width, this.height, this.x, this.y, this.width, this.height);
             
-
-            
-
             
         }
 
         update() {
 
-            
+            if (this.game.dead) {
+                this.image.src = this.images.dead;
+            }
 
             for (let i = 0; i < this.game.platformPositions.length; i++) {
 
@@ -302,7 +339,35 @@ window.addEventListener('load', () => {
 
             
             this.xVelocity = 0;
+
+
+            if (this.y >= this.game.height) {
+                this.game.dead = true;
+            }
             
+        }
+
+
+        attack() {
+
+            this.game.enemies.forEach((i) => {
+
+
+                if ((this.x <= i.x + 40) && (this.x >= i.x - 40) && ((this.y <= i.y+40) && (this.y >= i.y-40))) {
+                    i.health -= 25
+                    console.log("Successful hit!");
+                    if (i.health <= 0) {
+                        this.game.enemies.splice(this.game.enemies.indexOf(i), 1);
+                        setTimeout(() => {
+                            this.game.enemies.push(new Enemy(this.game, Math.random()*this.width, Math.random()*this.height));
+                        }, 5000);
+                        
+                    }
+
+                }
+
+            })
+
         }
     }
 
@@ -353,7 +418,7 @@ window.addEventListener('load', () => {
             // create enemies
 
             this.enemies = [];
-            this.enemyPositions = [[500, 50]];
+            this.enemyPositions = [[500, 50], [300, 50]];
 
             for(let i = 0; i < this.enemyPositions.length; i++) {
                 this.enemies.push(new Enemy(this, this.enemyPositions[i][0], this.enemyPositions[i][1]));
@@ -376,48 +441,53 @@ window.addEventListener('load', () => {
 
             document.addEventListener('keydown', (event) => {
 
-                if (event.key === 'a') {
-                    this.player.xVelocity = -20;
-                    this.player.image.src = this.player.images.run2;
-                    
-                } else if (event.key === "d") {
-                    this.player.xVelocity = 20;
-                    this.player.image.src = this.player.images.run;
-                } else if (event.key === 'w') {
-                    this.player.image.src = this.player.images.jump;
-                    this.player.y -= 80;
-                    
-                } else if (event.key === 's') {
-                    this.player.yVelocity = 10
-                } else if(event.key === ' ') {
-                    this.player.animationCount = 0;
-                    this.player.image.src = this.player.images.attack;
+                if(!this.dead) {
+                    if (event.key === 'a') {
+                        this.player.xVelocity = -10;
+                        this.player.image.src = this.player.images.run2;
+                        this.player.left = true;
+                        
+                    } else if (event.key === "d") {
+                        this.player.xVelocity = 10;
+                        this.player.image.src = this.player.images.run;
+                        this.player.left = false;
+                    } else if (event.key === 'w') {
+                        this.player.image.src = this.player.images.jump;
+                        this.player.y -= 80;
+                        
+                    } else if (event.key === 's') {
+                        this.player.yVelocity = 2
+                    } else if(event.key === ' ') {
+                        this.player.animationCount = 0;
+                        this.player.attack();
+                        if (this.player.left) {
+                            this.player.image.src = this.player.images.attack2;
+                        } else {
+                            this.player.image.src = this.player.images.attack;
+                        }
+                        
+                    }
                 }
+            });
 
-
-                
-
-            })
             document.addEventListener('keyup', (event) => {
+                if(!this.dead) {
+                    if (event.key === 'a') {
+                        this.player.xVelocity = 0;
+                        this.player.image.src = this.player.images.idle2;
+                    } else if (event.key === "d") {
+                        this.player.xVelocity = 0;
+                        this.player.image.src = this.player.images.idle;
+                    } else if (event.key === 'w') {
+                        this.player.image.src = this.player.images.idle;
+                        this.player.yVelocity = 0;
+                    } else if (event.key === ' ') {
+                        this.player.image.src = this.player.images.idle;
+                        
+                    }
 
-                if (event.key === 'a') {
-                    this.player.xVelocity = 0;
-                    this.player.image.src = this.player.images.idle;
-                } else if (event.key === "d") {
-                    this.player.xVelocity = 0;
-                    this.player.image.src = this.player.images.idle;
-                } else if (event.key === 'w') {
-                    this.player.image.src = this.player.images.idle;
-                    this.player.yVelocity = 0;
-                } else if (event.key === ' ') {
-                    this.player.image.src = this.player.images.idle;
-                    
                 }
-
-            })
-
-
-
+            });
 
         }
 
@@ -427,8 +497,16 @@ window.addEventListener('load', () => {
 
             this.player.x = 50;
             this.player.y = 50;
+
+            this.enemies.forEach((i) => {
+
+                i.x = Math.random()*this.width/2;
+                i.y = Math.random()*this.height;
+            })
             
             this.dead = false;
+            this.player.health = 100;
+            this.player.image.src = this.player.images.idle;
             music.play();
 
 
@@ -464,10 +542,21 @@ window.addEventListener('load', () => {
             this.player.draw(context);
             this.player.update();
 
+
+            // draw player health
+
+            context.fillStyle = 'white';
+            context.font = "20px Orbitron";
+            context.textAlign = 'left';
+            context.fillText('Player Health:', 50, 45);
+
+            context.fillStyle = 'red';
+            context.fillRect(50, 50, this.player.health*2, 20);
+
             // check for player death
 
-            if (this.player.y > this.height) {
-                this.dead = true;
+            if (this.dead) {
+                
                 context.fillStyle = 'white';
                 context.font = "30px Orbitron";
                 context.textAlign = 'center';
