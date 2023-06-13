@@ -36,9 +36,9 @@ window.addEventListener('load', () => {
             this.health = 100;
             this.attackStrength = 10;
             this.attacking = false;
-            this.jumping = false;
+            
 
-
+            this.dead = false;
 
             this.images = {
                 idle: './EnemyIdle.png',
@@ -47,7 +47,8 @@ window.addEventListener('load', () => {
                 run: './EnemyRun.png',
                 run2: './EnemyRun2.png',
                 attack: './EnemyAttack.png',
-                attack2: './EnemyAttack2.png'
+                attack2: './EnemyAttack2.png',
+                dead: './EnemyDead.png'
 
             }
 
@@ -71,24 +72,53 @@ window.addEventListener('load', () => {
 
             // Enemy Animation
 
-                if (animationCount == 0) {
-                    this.spriteX = this.spriteX+95.8
-                    if (this.spriteX >= 514) {
-                        this.spriteX = 0;
-                        if (this.attacking){
-                            this.attacking = false;
-                        }
+            if (this.dead) {
+                this.spriteY = -20;
+                if(this.spriteX < 250){
+                    this.spriteX = this.spriteX+95.8;
+                }
+            }
+
+            else if (animationCount == 0) {
+                this.spriteX = this.spriteX+95.8
+                if (this.spriteX >= 514) {
+                    this.spriteX = 0;
+                    if (this.attacking){
+                        this.attacking = false;
                     }
                 }
+            }
 
 
-            context.drawImage(this.image, this.spriteX, this.spriteY, this.width, this.height, this.x, this.y, this.width, this.height);
-        
+        context.drawImage(this.image, this.spriteX, this.spriteY, this.width, this.height, this.x, this.y, this.width, this.height);
+    
             
         }
 
         update() {
 
+            if(this.dead) {
+                return
+            }
+
+
+
+            for (let i = 0; i < this.game.platformPositions.length; i++) {
+
+                // vertical collision detection
+
+                if (((this.x+(this.width)-40) >= this.game.platformPositions[i][0] && (this.x <= this.game.platformPositions[i][0]+(this.game.platforms[0].width-20))) &&
+                    (this.y+this.height) <= (this.game.platformPositions[i][1]+1) && (this.y+this.height) >= this.game.platformPositions[i][1]-1) {
+                        this.yVelocity = 0;
+                        break
+
+                } else {
+                    this.yVelocity = 3;
+                }
+
+                
+            }
+ 
 
             // ENEMY AI
             if (this.attacking) {
@@ -124,7 +154,7 @@ window.addEventListener('load', () => {
                 }
                 
 
-            } else if (this.x <= this.game.player.x + 40 || this.x >= this.game.player.x -40) {
+            } else if (this.x <= this.game.player.x + 50 || this.x >= this.game.player.x -50) {
                 if (this.x > this.game.player.x){
                     this.image.src = this.images.idle2;
                 } else {
@@ -137,23 +167,7 @@ window.addEventListener('load', () => {
 
             
 
-            for (let i = 0; i < this.game.platformPositions.length; i++) {
-
-                // vertical collision detection
-
-                if (((this.x+(this.width)-40) >= this.game.platformPositions[i][0] && (this.x <= this.game.platformPositions[i][0]+(this.game.platforms[0].width-20))) &&
-                    (this.y+this.height) <= (this.game.platformPositions[i][1]+1) && (this.y+this.height) >= this.game.platformPositions[i][1]-1) {
-                        this.yVelocity = 0;
-                        this.jumping = false;
-                        break
-
-                } else if (!this.jumping){
-                    this.yVelocity = 5;
-                }
-
-                
-            }
- 
+            
             
             this.y += this.yVelocity;
             this.x += this.xVelocity;
@@ -176,7 +190,7 @@ window.addEventListener('load', () => {
             if (this.game.player.health > 0) {
                 this.game.player.health -= this.attackStrength;
             } else {
-                this.game.player.healt = 0;
+                this.game.player.health = 0;
             }
             
 
@@ -235,15 +249,32 @@ window.addEventListener('load', () => {
         }
     }
 
+    class Tree {
 
-    class JumpEffect {
-
-        constructor(game) {
-
+        constructor(game, x, y) {
             this.game = game;
-            this.image = new Image();
-            this.image.src = './jump-effect.png';
+            this.images = {
+                tree1: './Tree1.png',
+                tree2: './Tree2.png',
+            }
+            this.x = x;
+            this.y = y;
 
+            
+
+            this.image = new Image;
+            if (Math.random() * 10 > 5){
+                this.image.src = this.images.tree2;
+            } else {
+                this.image.src = this.images.tree1;
+            }
+            
+
+        }
+
+        draw(context) {
+
+            context.drawImage(this.image, this.x, this.y);
         }
     }
 
@@ -281,6 +312,7 @@ window.addEventListener('load', () => {
 
 
             this.left = false;
+            this.attacking = false;
 
         }
 
@@ -351,23 +383,32 @@ window.addEventListener('load', () => {
         attack() {
 
             this.game.enemies.forEach((i) => {
+                if (!this.attacking){
 
-
-                if ((this.x <= i.x + 40) && (this.x >= i.x - 40) && ((this.y <= i.y+40) && (this.y >= i.y-40))) {
-                    i.health -= 25
-                    console.log("Successful hit!");
-                    if (i.health <= 0) {
-                        this.game.enemies.splice(this.game.enemies.indexOf(i), 1);
-                        setTimeout(() => {
-                            this.game.enemies.push(new Enemy(this.game, Math.random()*this.width, Math.random()*this.height));
-                        }, 5000);
-                        
+                    if ((this.x <= i.x + 40) && (this.x >= i.x - 40) && ((this.y <= i.y+40) && (this.y >= i.y-40)) ) {
+                    
+                        this.attacking = true;
+                        setInterval(() => {
+                            this.attacking = false;
+    
+                        }, 3000);
+                        if (i.health > 0) {
+                            i.health -= 25
+                            
+                            console.log("Successful hit!");
+                            if (i.health <= 0) {
+                                i.dead = true;
+                                i.image.src = i.images.dead;
+                                
+                            
+                            }
+    
+                        }
                     }
 
                 }
 
             })
-
         }
     }
 
@@ -381,6 +422,9 @@ window.addEventListener('load', () => {
             this.canvas = canvas
             this.width = this.canvas.width;
             this.height = this.canvas.height;
+            this.scrollX = 0;
+
+
             this.player = new Player(this); // this keyword refers to the entire object
             this.backgroundImage = new Image();
             this.backgroundImage.src = "./level1.png";
@@ -388,6 +432,13 @@ window.addEventListener('load', () => {
                 ctx.drawImage(this.backgroundImage, 0, 0, this.width, this.height);
             } 
 
+            // create trees
+            this.trees = [];
+            this.treePositions = [[Math.random()*this.width, 300], [Math.random()*this.width, 300], [Math.random()*this.width, 300]];
+
+            for(let i = 0; i < this.treePositions.length; i++) {
+                this.trees.push(new Tree(this, this.treePositions[i][0], this.treePositions[i][1]));
+            }
 
             // create platforms
             this.platforms = [];
@@ -405,10 +456,13 @@ window.addEventListener('load', () => {
                                     [300, this.height-50], 
                                     [350, this.height-50], 
                                     [400, this.height-50], 
-                                    [450, this.height-50],  
-                                    [(this.width/5)*2, this.height-50], 
-                                    [(this.width/5)*4, this.height-50], 
-                                    [(this.width/5)*3, this.height-200]];
+                                    [450, this.height-50],
+                                    [500, this.height-50],
+                                    [550, this.height-50],
+                                    [600, this.height-50],  
+                                    [650, this.height-50],  
+                                    [700, this.height-50],  
+                                    [750, this.height-50]];
 
             for(let i = 0; i < this.platformPositions.length; i++) {
                 this.platforms.push(new Platform(this, this.platformPositions[i][0], this.platformPositions[i][1]));
@@ -418,7 +472,7 @@ window.addEventListener('load', () => {
             // create enemies
 
             this.enemies = [];
-            this.enemyPositions = [[500, 50], [300, 50]];
+            this.enemyPositions = [[Math.random()*this.width, 400], [Math.random()*this.width, 400]];
 
             for(let i = 0; i < this.enemyPositions.length; i++) {
                 this.enemies.push(new Enemy(this, this.enemyPositions[i][0], this.enemyPositions[i][1]));
@@ -498,11 +552,11 @@ window.addEventListener('load', () => {
             this.player.x = 50;
             this.player.y = 50;
 
-            this.enemies.forEach((i) => {
-
-                i.x = Math.random()*this.width/2;
-                i.y = Math.random()*this.height;
-            })
+            this.enemies = [];
+            for(let i = 0; i < this.enemyPositions.length; i++) {
+                this.enemies.push(new Enemy(this, this.enemyPositions[i][0], this.enemyPositions[i][1]));
+            }
+            
             
             this.dead = false;
             this.player.health = 100;
@@ -516,6 +570,9 @@ window.addEventListener('load', () => {
 
         render(context) {
 
+
+            
+
             context.clearRect(0, 0, canvas.width, canvas.height);
 
             // draw background
@@ -524,23 +581,37 @@ window.addEventListener('load', () => {
             // draw platforms on the screen
             
             for (let i = 0; i < this.platforms.length; i++) {
-
                 this.platforms[i].draw(context);
-                
+            }
+
+            
+
+            // add an enemy occassionally
+
+            if(Math.random()*50>49.9 && this.enemies.length < 5) {
+                this.enemies.push(new Enemy(this, Math.random()*this.width, 400));
             }
 
             // draw enemies on the screen
 
             this.enemies.forEach((i) => {
-
-                i.draw(context);
                 i.update();
+                i.draw(context);
+                
 
             });
 
             // draw the player on the canvas
             this.player.draw(context);
             this.player.update();
+
+            // draw trees on the screen
+
+            for (let i = 0; i < this.trees.length; i++) {
+
+                this.trees[i].draw(context);
+            }
+
 
 
             // draw player health
