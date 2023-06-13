@@ -14,15 +14,60 @@ window.addEventListener('load', () => {
 
     // AUDIO
     let music = document.getElementById('music');
-    
-
+    let swordSlash = document.getElementById('sword-slash');
+    let enemySwordSlash = document.getElementById('enemy-sword-slash');
+    const playerCry = document.getElementById('player-cry');
+    const fallWater = document.getElementById('fall-water');
+    const enemyHurt = document.getElementById('enemy-hurt');
+    const enemyDead = document.getElementById('enemy-dead');
 
 
     // Wet Dream Dialogue
 
     const dialogueText = document.getElementById('dialogue');
 
-    dialogueText.innerHTML = 'This is edited by JS....';
+    dialogueText.innerHTML = 'Focus young monk, your destiny is at hand...';
+
+
+    class Bomb {
+
+        constructor(game, x, y) {
+            this.game = game;
+            this.x = x;
+            this.y = y;
+            this.images = ['./Images/Attacks/Bomb/bomb1.png',
+            './Images/Attacks/Bomb/bomb2.png',
+            './Images/Attacks/Bomb/bomb3.png',
+            './Images/Attacks/Bomb/bomb4.png',
+            './Images/Attacks/Bomb/bomb5.png',
+            './Images/Attacks/Bomb/bomb6.png',
+            './Images/Attacks/Bomb/bomb7.png',
+            './Images/Attacks/Bomb/bomb8.png',
+            './Images/Attacks/Bomb/bomb9.png',
+            './Images/Attacks/Bomb/bomb10.png'
+            ]
+
+            this.image = new Image();
+            this.index = 0;
+            this.image.src = this.images[this.index];
+        }
+
+
+        draw(context) {
+
+            if(animationCount == 0) {
+                if(this.index < this.images.length) {
+                    context.drawImage(this.image, this.x, this.y);
+                    this.index += 1;
+                    this.image.src = this.images[this.index];
+                } else {
+                    
+                    this.game.bombs.pop();
+                }
+            }
+            
+        }
+    }
 
 
     class Enemy {
@@ -178,6 +223,7 @@ window.addEventListener('load', () => {
 
 
             if (this.y > this.game.height) {
+                fallWater.play();
                 this.game.enemies.pop(this);
                 this.game.enemies.push(new Enemy(this.game, Math.random()*this.game.width, Math.random()*this.game.height));
             }
@@ -187,7 +233,9 @@ window.addEventListener('load', () => {
 
         attack() {
 
+            enemySwordSlash.play();
             if (this.game.player.health > 0) {
+                playerCry.play();
                 this.game.player.health -= this.attackStrength;
             } else {
                 this.game.player.health = 0;
@@ -293,7 +341,9 @@ window.addEventListener('load', () => {
                 attack: './Attack_1.png',
                 idle2: './Idle2.png',
                 attack2: './Attack2.png',
-                dead: './Dead.png'
+                dead: './Dead.png',
+                cast1: './Cast1.png',
+                cast2: './Cast2.png'
 
             }
 
@@ -326,13 +376,23 @@ window.addEventListener('load', () => {
                     this.spriteX = this.spriteX+95.8;
                 }
                 
+            } else if (this.attacking) {
+                if(this.spriteX < 350){
+                    this.spriteX = this.spriteX+95.8;
+                } else {
+                    if (this.left) {
+                        this.image.src = this.images.idle2;
+                    } else {
+                        this.image.src = this.images.idle;
+                    }
+                }
+
+
             } else if (animationCount == 0) {
                 this.spriteX = this.spriteX+95.8
                 if (this.spriteX >= 514) {
                     this.spriteX = 0;
-                    if (this.attacking){
-                        this.attacking = false;
-                    }
+                    
                 }
             }
 
@@ -374,6 +434,7 @@ window.addEventListener('load', () => {
 
 
             if (this.y >= this.game.height) {
+                fallWater.play();
                 this.game.dead = true;
             }
             
@@ -381,24 +442,25 @@ window.addEventListener('load', () => {
 
 
         attack() {
-
+            swordSlash.play();
             this.game.enemies.forEach((i) => {
-                if (!this.attacking){
+               
 
                     if ((this.x <= i.x + 40) && (this.x >= i.x - 40) && ((this.y <= i.y+40) && (this.y >= i.y-40)) ) {
                     
-                        this.attacking = true;
-                        setInterval(() => {
-                            this.attacking = false;
-    
-                        }, 3000);
+
                         if (i.health > 0) {
+                            enemyHurt.play();
                             i.health -= 25
+
                             
                             console.log("Successful hit!");
+                            console.log(this.game.enemies);
                             if (i.health <= 0) {
                                 i.dead = true;
+                                enemyDead.play();
                                 i.image.src = i.images.dead;
+                                this.game.enemies.pop(i);
                                 
                             
                             }
@@ -408,7 +470,7 @@ window.addEventListener('load', () => {
 
                 }
 
-            })
+            )
         }
     }
 
@@ -477,6 +539,13 @@ window.addEventListener('load', () => {
             for(let i = 0; i < this.enemyPositions.length; i++) {
                 this.enemies.push(new Enemy(this, this.enemyPositions[i][0], this.enemyPositions[i][1]));
             }
+
+
+            // create bombs
+            this.bombs = [];
+            
+
+            // player state
             
             this.dead = false;
 
@@ -513,13 +582,27 @@ window.addEventListener('load', () => {
                         this.player.yVelocity = 2
                     } else if(event.key === ' ') {
                         this.player.animationCount = 0;
-                        this.player.attack();
-                        if (this.player.left) {
-                            this.player.image.src = this.player.images.attack2;
-                        } else {
-                            this.player.image.src = this.player.images.attack;
+                        if (!this.player.attacking){
+                            if (this.player.left) {
+                                this.player.image.src = this.player.images.attack2;
+                            } else {
+                                this.player.image.src = this.player.images.attack;
+                            }
+                            this.player.attacking = true;
+                            this.player.attack();
                         }
                         
+                    } else if (event.key === 'e') {
+                        this.player.animationCount = 0;
+                        this.player.image.src = this.player.images.cast1;
+                        if (this.player.left) {
+                            this.bombs.push(new Bomb(this, this.player.x - 100, this.player.y));
+                        } else {
+                            this.bombs.push(new Bomb(this, this.player.x + 100, this.player.y));
+                        }
+                        
+                        
+
                     }
                 }
             });
@@ -536,6 +619,7 @@ window.addEventListener('load', () => {
                         this.player.image.src = this.player.images.idle;
                         this.player.yVelocity = 0;
                     } else if (event.key === ' ') {
+                        this.player.attacking = false;
                         this.player.image.src = this.player.images.idle;
                         
                     }
@@ -605,12 +689,23 @@ window.addEventListener('load', () => {
             this.player.draw(context);
             this.player.update();
 
+
+            // draw bombs on the screen
+
+            this.bombs.forEach((i) => {
+                i.draw(context);
+            })
+
+
             // draw trees on the screen
 
             for (let i = 0; i < this.trees.length; i++) {
 
                 this.trees[i].draw(context);
             }
+
+
+            
 
 
 
